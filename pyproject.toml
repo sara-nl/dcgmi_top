@@ -1,0 +1,12 @@
+[project]
+name = "dcgmi_top"
+version = "0.1.0"
+description = "dcgmi display similar to nvtop"
+readme = "README.md"
+requires-python = ">=3.7"
+dependencies = [
+    "plotext==5.2.8",
+]
+
+[project.scripts]
+dcgmi-top = "dcgmi_top:main"

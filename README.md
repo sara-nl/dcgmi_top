@@ -18,13 +18,18 @@ It might crash randomly if dcgmi throws an exception.
 
 ```bash
 usage: dcgmi_top.py [-h] [--gpus GPUS] [--metrics METRICS] [--refresh_rate REFRESH_RATE]
+                    [--theme THEME]
 
 options:
   -h, --help            show this help message and exit
   --gpus GPUS           Comma-separated gpu id list
-  --metrics METRICS     Comma-separated metrics list. Possible values: ['GPUTL', 'MCUTL', 'GRACT', 'SMACT', 'SMOCC', 'TENSO', 'DRAMA', 'PCITX', 'PCIRX', 'NVLTX', 'NVLRX', 'POWER']
+  --metrics METRICS     Comma-separated metrics list. Possible values: ['GPUTL', 'MCUTL',
+                        'GRACT', 'SMACT', 'SMOCC', 'TENSO', 'DRAMA', 'PCITX', 'PCIRX',
+                        'NVLTX', 'NVLRX', 'POWER']
   --refresh_rate REFRESH_RATE
                         Refresh rate.
+  --theme THEME         Available plot themes https://github.com/piccolomo/plotext/blob/master
+                        /readme/aspect.md#themes
 ```
 
 ## Future

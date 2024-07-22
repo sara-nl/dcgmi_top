@@ -14,16 +14,16 @@ locale.setlocale(locale.LC_ALL, '')
 code = locale.getpreferredencoding()
 COLUMNS = ["GPUTL", "MCUTL", "GRACT", "SMACT", "SMOCC", "TENSO", "DRAMA", "PCITX", "PCIRX", "NVLTX",
            "NVLRX", "POWER"]
-SCALES = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+SCALES = [100, 100, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 SLEEP_INTERVAL = 2
 
 
 class Plotter():
-    def __init__(self, gpus, metrics, refresh_rate, **kwargs):
+    def __init__(self, gpus, metrics, theme,refresh_rate, **kwargs):
         self.popen = None
         self.gpu_nodes = gpus
         self.metrics: list[str] = metrics.split(",")
-
+        self.theme = theme
         self.refresh_rate = int(refresh_rate)
         assert len(self.gpu_nodes.split(",")) <= 4
 
@@ -170,7 +170,7 @@ class Plotter():
             plt.clf()
             plt.plot_size(term_width, term_height - 1)
             plt.subplots(width, height)
-            plt.theme("grandpa")
+            plt.theme(self.theme)
             plt.title(" ".join(self.metrics))
             for i, gpu_id in enumerate(gpus):
                 x = i % 2 + 1
@@ -197,6 +197,7 @@ def parse_args():
     parser.add_argument("--gpus", default="0,1,2,3", help="Comma-separated gpu id list")
     parser.add_argument("--metrics", default="POWER", help=f"Comma-separated metrics list. Possible values: {COLUMNS}")
     parser.add_argument("--refresh_rate", default=1000, help=f"Refresh rate.")
+    parser.add_argument("--theme",default="grandpa", help=f"Available plot themes https://github.com/piccolomo/plotext/blob/master/readme/aspect.md#themes")
     return parser.parse_args()
 
 

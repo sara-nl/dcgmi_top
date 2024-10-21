@@ -214,7 +214,7 @@ def parse_args():
 
 
 def main():
-    logging.basicConfig(filename="out.txt", level=logging.INFO, format=f"%(asctime)s %(message)s")
+    # logging.basicConfig(filename="out.txt", level=logging.INFO, format=f"%(asctime)s %(message)s")
     args = parse_args()
     plotter = Plotter(**vars(args))
 

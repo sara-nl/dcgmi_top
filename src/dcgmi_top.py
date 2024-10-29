@@ -13,7 +13,7 @@ from functools import partial
 
 import plotext as plt
 
-from src.dcgm_reader import DCGMReader, GPUStats
+from dcgm_reader import DCGMReader, GPUStats
 
 locale.setlocale(locale.LC_ALL, '')
 code = locale.getpreferredencoding()

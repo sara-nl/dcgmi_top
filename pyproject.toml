@@ -9,4 +9,4 @@ dependencies = [
 ]
 
 [project.scripts]
-dcgmi-top = "dcgmi_top:main"
+dcgmi-top = "src.dcgmi_top:main"

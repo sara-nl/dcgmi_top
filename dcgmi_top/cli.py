@@ -48,7 +48,7 @@ class Plotter():
 
         SCALES[COLUMNS.index("power_usage")] = self.get_power_limit()
 
-        self.reader = DCGMReader(mode="means")
+        self.reader = DCGMReader(mode="last")
         self.reader.start()
 
         self.per_entity_data = defaultdict(list[GPUStats])

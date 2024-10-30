@@ -1,4 +1,5 @@
 import argparse
+import copy
 import curses
 import io
 import locale
@@ -131,7 +132,7 @@ class Plotter():
         while self._running:
             gpus = self.reader.get_gpus()
             for gpu_name in gpus:
-                self.per_entity_data[gpu_name].append(self.reader.get_gpu_stats(gpu_name))
+                self.per_entity_data[gpu_name].append(copy.copy(self.reader.get_gpu_stats(gpu_name)))
                 if len(self.per_entity_data[gpu_name]) > 30:
                     self.per_entity_data[gpu_name] = self.per_entity_data[gpu_name][-30:]
 

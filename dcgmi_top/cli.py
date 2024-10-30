@@ -23,21 +23,23 @@ COLUMNS = ["gpu_utilization", "mem_copy_utilization", "gr_engine_active", "sm_ac
 GB = 1024 * 1024 * 1024
 SCALES = [100, 100, 1, 1, 1, 1, 1, GB, GB, GB, GB, 1]
 SLEEP_INTERVAL = 2
-
+PROFILING = False
 
 def profile(func):
     def wrap(*args, **kwargs):
-        started_at = datetime.datetime.now()
-        result = func(*args, **kwargs)
-        logging.info(f"{func.__name__}: {datetime.datetime.now() - started_at}")
-        return result
+        if PROFILING:
+            started_at = datetime.datetime.now()
+            result = func(*args, **kwargs)
+            logging.info(f"{func.__name__}: {datetime.datetime.now() - started_at}")
+            return result
+        else:
+            return func(*args, **kwargs)
 
     return wrap
 
 
 class Plotter():
     def __init__(self, gpus, metrics, theme, refresh_rate, **kwargs):
-        self.popen = None
         self.gpu_nodes = gpus
         self.metrics: list[str] = metrics.split(",")
         self.theme = theme
@@ -46,7 +48,7 @@ class Plotter():
 
         SCALES[COLUMNS.index("power_usage")] = self.get_power_limit()
 
-        self.reader = DCGMReader(mode="last")
+        self.reader = DCGMReader(mode="means")
         self.reader.start()
 
         self.per_entity_data = defaultdict(list[GPUStats])
@@ -81,6 +83,8 @@ class Plotter():
         metric_id = COLUMNS.index(metric_name)
         scale = SCALES[metric_id]
         metrics: list[GPUStats] = self.per_entity_data[gpu_name]
+        if len(metrics) > 0:
+            logging.info(f"Metric: {metrics[0].gpu_utilization}")
         current_metrics = [getattr(x, metric_name) / scale for x in metrics]
         scaled_metrics = [0.0] * (30 - len(current_metrics)) + current_metrics
         return [min(x, 1) for x in scaled_metrics]
@@ -131,7 +135,7 @@ class Plotter():
                 if len(self.per_entity_data[gpu_name]) > 30:
                     self.per_entity_data[gpu_name] = self.per_entity_data[gpu_name][-30:]
 
-            time.sleep(1000)
+            time.sleep(1)
 
     def run(self, stdscr):
         curses.curs_set(0)  # Hide the cursor
@@ -193,7 +197,6 @@ class Plotter():
         if self.key_thread is not None:
             self.key_thread.join()
         self.reader.stop()
-        self.popen.kill()
 
 
 def parse_args():

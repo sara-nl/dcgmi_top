@@ -57,7 +57,14 @@ def convert_int(val_str):
 
 def set_scales(scale_str):
     for scale in scale_str.split(","):
-        k, v = scale.split("=", 1)
+        if scale.strip() == "":
+            continue
+
+        try:
+            k, v = scale.split("=", 1)
+        except ValueError:
+            logging.warning(f"Invalid pair, must be 'k=v'.")
+            continue
 
         try:
             col_id = COLUMNS.index(k)
@@ -86,7 +93,7 @@ def profile(func):
 
 class Plotter():
 
-    def __init__(self, gpus, metrics, theme, refresh_rate, **kwargs):
+    def __init__(self, gpus, metrics, theme, refresh_rate, autoscale, **kwargs):
         self.gpu_nodes = gpus
         self.metrics: list[str] = metrics.split(",")
         self.theme = theme
@@ -97,6 +104,8 @@ class Plotter():
 
         self.reader = DCGMReader(mode="last")
         self.reader.start()
+
+        self.auto_scale_metrics = [x for x in autoscale.split(",") if x in COLUMNS]
 
         self.per_entity_data = defaultdict(list[GPUStats])
         self.metric_selected_id = 0
@@ -130,8 +139,6 @@ class Plotter():
         metric_id = COLUMNS.index(metric_name)
         scale = SCALES[metric_id]
         metrics: list[GPUStats] = self.per_entity_data[gpu_name]
-        if len(metrics) > 0:
-            logging.info(f"Metric: {metrics[0].gpu_utilization}")
         current_metrics = [getattr(x, metric_name) / scale for x in metrics]
         scaled_metrics = [0.0] * (30 - len(current_metrics)) + current_metrics
         return [min(x, 1) for x in scaled_metrics]
@@ -178,7 +185,12 @@ class Plotter():
         while self._running:
             gpus = self.reader.get_gpus()
             for gpu_name in gpus:
-                self.per_entity_data[gpu_name].append(copy.copy(self.reader.get_gpu_stats(gpu_name)))
+                stats = copy.copy(self.reader.get_gpu_stats(gpu_name))
+                for metric in self.auto_scale_metrics:
+                    value = getattr(stats, metric)
+                    SCALES[COLUMNS.index(metric)] = max(value, SCALES[COLUMNS.index(metric)])
+
+                self.per_entity_data[gpu_name].append(stats)
                 if len(self.per_entity_data[gpu_name]) > 30:
                     self.per_entity_data[gpu_name] = self.per_entity_data[gpu_name][-30:]
 
@@ -265,6 +277,11 @@ def parse_args():
         default="",
         help="For each metric, set the scale as a comma-separated list of a=b pairs. The scale has to be a number and can have a postfix (KB - TB)."
     )
+    parser.add_argument(
+        "--autoscale",
+        default="",
+        help="For each metric in the given comma-separated list, automatically scale height to the max encountered value."
+    )
     return parser.parse_args()
 
 
@@ -272,7 +289,7 @@ def main():
     # logging.basicConfig(filename="out.txt", level=logging.INFO, format=f"%(asctime)s %(message)s")
     args = parse_args()
 
-    set_scales(args.scale)
+    set_scales(args.scales)
 
     plotter = Plotter(**vars(args))
 

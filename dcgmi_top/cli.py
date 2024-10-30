@@ -21,10 +21,55 @@ code = locale.getpreferredencoding()
 COLUMNS = ["gpu_utilization", "mem_copy_utilization", "gr_engine_active", "sm_active", "sm_occupancy", "tensor_active",
            "dram_active", "pcie_tx_bytes", "pcie_rx_bytes", "nvlink_tx_bytes",
            "nvlink_rx_bytes", "power_usage"]
-GB = 1024 * 1024 * 1024
+
+KB = 1024
+MB = KB * KB
+GB = MB * KB
+TB = GB * KB
+
+scale_lookup = {
+    "kb": KB,
+    "mb": MB,
+    "gb": GB,
+    "tb": TB
+}
+
 SCALES = [100, 100, 1, 1, 1, 1, 1, GB, GB, GB, GB, 1]
 SLEEP_INTERVAL = 2
 PROFILING = False
+
+
+def convert_int(val_str):
+    try:
+        return float(val_str)
+    except ValueError:
+        postfix = val_str[-2:].lower()
+        prefix = val_str[:-2]
+
+        if postfix not in scale_lookup.keys():
+            logging.warning(f"Unknown scale {postfix}")
+            raise ValueError()
+
+        value = float(prefix)
+
+        return value * scale_lookup[postfix]
+
+
+def set_scales(scale_str):
+    for scale in scale_str.split(","):
+        k, v = scale.split("=", 1)
+
+        try:
+            col_id = COLUMNS.index(k)
+        except ValueError:
+            logging.warning(f"{k} is an invalid metric. Skipping...")
+            continue
+
+        try:
+            SCALES[col_id] = convert_int(v)
+        except ValueError:
+            logging.warning(f"{v} is an invalid value. Skipping...")
+
 
 def profile(func):
     def wrap(*args, **kwargs):
@@ -40,6 +85,7 @@ def profile(func):
 
 
 class Plotter():
+
     def __init__(self, gpus, metrics, theme, refresh_rate, **kwargs):
         self.gpu_nodes = gpus
         self.metrics: list[str] = metrics.split(",")
@@ -214,12 +260,20 @@ def parse_args():
         default="grandpa",
         help=f"Available plot themes https://github.com/piccolomo/plotext/blob/master/readme/aspect.md#themes"
     )
+    parser.add_argument(
+        "--scales",
+        default="",
+        help="For each metric, set the scale as a comma-separated list of a=b pairs. The scale has to be a number and can have a postfix (KB - TB)."
+    )
     return parser.parse_args()
 
 
 def main():
     # logging.basicConfig(filename="out.txt", level=logging.INFO, format=f"%(asctime)s %(message)s")
     args = parse_args()
+
+    set_scales(args.scale)
+
     plotter = Plotter(**vars(args))
 
     try:
